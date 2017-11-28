@@ -1,0 +1,12 @@
+---
+- name: Logging into Gogs Docker Registry
+  docker_login:
+    registry: "{{ kibana_registry }}"
+    username: "{{ kibana_registry_username }}"
+    password: "{{ kibana_registry_password }}"
+  when: kibana_registry_login == true
+
+- name: Pulling Kibana image
+  docker_image:
+     name: "{{ kibana_registry }}{{ kibana_image_name }}"
+     state: present

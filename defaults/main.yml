@@ -1,0 +1,10 @@
+---
+fluentd_registry_login: false
+fluentd_registry: "docker.io/"
+fluentd_image_name: "fluent/fluentd"
+elasticsearch_registry_login: false
+elasticsearc_registry: "docker.io/"
+elasticsearc_image_name: "elasticsearch"
+kibana_registry_login: false
+kibana_registry: "docker.io/"
+kibana_image_name: "kibana"
