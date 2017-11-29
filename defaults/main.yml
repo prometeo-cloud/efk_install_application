@@ -1,10 +1,14 @@
 ---
+#fluentd_registry_login: true
+#fluentd_registry: "registry.access.redhat.com"
+#fluentd_image_name: "openshift3/logging-fluentd"
 fluentd_registry_login: false
-fluentd_registry: "registry.access.redhat.com/"
-fluentd_image_name: "openshift3/logging-fluentd"
-elasticsearch_registry_login: false
-elasticsearc_registry: "docker.io/"
-elasticsearc_image_name: "elasticsearch"
-kibana_registry_login: false
-kibana_registry: "docker.io/"
-kibana_image_name: "kibana"
+fluentd_registry: "docker.io"
+fluentd_image_name: "fluent/fluentd:v0.12-debian"
+elasticsearch_registry_login: true
+elasticsearch_registry: "registry.access.redhat.com"
+elasticsearch_image_name: "openshift3/logging-elasticsearch"
+kibana_registry_login: true
+kibana_registry: "registry.access.redhat.com"
+kibana_image_name: "openshift3/logging-kibana"
+...

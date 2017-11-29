@@ -8,7 +8,7 @@
 
 - name: Generate fluentd Dockerfile from variables
   template:
-    src: "flurentd_Dockerfile.j2"
+    src: "fluentd_Dockerfile.j2"
     dest: "/tmp/Dockerfile"
   delegate_to: localhost
 
@@ -16,9 +16,15 @@
   include_role:
     name: docker_manage_hosts
     tasks_from: build_dockerfile
-    vars:
-      image_name: "{{ fluentd_image_name }}_elasticsearch"
-      dockerfile: "/tmp/Dockerfile"
+  vars:
+    image_name: "{{ fluentd_image_name }}-elasticsearch"
+    image_tag: "1"
+    dockerfile: "/tmp/Dockerfile"
+
+- name: Remove generate fluentd Dockerfile
+  file:
+    path: "/tmp/Dockerfile"
+    state: absent
 
 - name: Logging into Kibana Docker Registry
   docker_login:
@@ -43,4 +49,35 @@
   docker_image:
      name: "{{ elasticsearch_registry }}/{{ elasticsearch_image_name }}"
      state: present
+
+- name: Start up the FluentD, ElasticSearch and Kabina
+  docker_service:
+    state: present
+    project_name: EFK
+    definition:
+      version: '2'
+      services:
+        fluentd:
+          image: "{{ fluentd_image_name }}"
+          volumes:
+            - ./fluentd/conf:/fluentd/etc
+          links:
+            - elasticsearch
+          ports:
+            - "24224:24224"
+            - "24224:24224/udp"
+
+        elasticsearch:
+          image: "{{ elasticsearch_registry }}/{{ elasticsearch_image_name }}"
+          expose:
+            - 9200
+          ports:
+            - "9200:9200"
+
+        kibana:
+          image: "{{ kibana_registry }}/{{ kibana_image_name }}"
+          links:
+            - elasticsearch
+          ports:
+            - "5601:5601"
 ...
