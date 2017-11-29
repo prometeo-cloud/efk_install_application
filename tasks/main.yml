@@ -59,16 +59,19 @@
       services:
         fluentd:
           image: "{{ fluentd_image_name }}"
+          container_name: fluentd
+          restart: unless-stopped
           volumes:
-            - ./fluentd/conf:/fluentd/etc
+            - /tmp/fluentd/conf:/fluentd/etc
           links:
             - elasticsearch
           ports:
             - "24224:24224"
             - "24224:24224/udp"
-
         elasticsearch:
           image: "{{ elasticsearch_registry }}/{{ elasticsearch_image_name }}"
+          container_name: elasticsearch
+          restart: unless-stopped
           expose:
             - 9200
           ports:
@@ -76,8 +79,14 @@
 
         kibana:
           image: "{{ kibana_registry }}/{{ kibana_image_name }}"
+          container_name: kibana
+          restart: unless-stopped
           links:
             - elasticsearch
           ports:
             - "5601:5601"
+  register: output
+
+- debug:
+    var: output
 ...
