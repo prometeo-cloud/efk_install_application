@@ -12,7 +12,7 @@
     dest: "/tmp/Dockerfile"
   delegate_to: localhost
 
-- name: Copy flurentd Dockerfile to managed host
+- name: Build the flurentd Dockerfile image
   include_role:
     name: docker_manage_hosts
     tasks_from: build_dockerfile
@@ -25,6 +25,18 @@
   file:
     path: "/tmp/Dockerfile"
     state: absent
+
+- name: Creates directory
+  become: yes
+  file:
+    path: "{{ fluentd_host_dir }}"
+    state: directory
+    mode: 0777
+
+- name: Copy the fluentd conf file to fluentd conf directory
+  template:
+    src: "fluentd_conf.j2"
+    dest: "{{ fluentd_host_dir }}/fluent.conf"
 
 - name: Logging into Kibana Docker Registry
   docker_login:
@@ -58,24 +70,24 @@
       version: '2'
       services:
         fluentd:
-          image: "{{ fluentd_image_name }}"
+          image: "{{ fluentd_image_name }}-elasticsearch"
           container_name: fluentd
           restart: unless-stopped
           volumes:
-            - /tmp/fluentd/conf:/fluentd/etc
+            - "{{ fluentd_host_dir }}:{{ fluentd_conf_dir }}"
           links:
             - elasticsearch
           ports:
-            - "24224:24224"
-            - "24224:24224/udp"
+            - "{{ fluentd_port }}:{{ fluentd_port }}"
+            - "{{ fluentd_port }}:{{ fluentd_port }}/udp"
         elasticsearch:
           image: "{{ elasticsearch_registry }}/{{ elasticsearch_image_name }}"
           container_name: elasticsearch
           restart: unless-stopped
           expose:
-            - 9200
+            - "{{ elasticsearch_port }}"
           ports:
-            - "9200:9200"
+            - "{{ elasticsearch_port }}:{{ elasticsearch_port }}"
 
         kibana:
           image: "{{ kibana_registry }}/{{ kibana_image_name }}"
@@ -84,7 +96,7 @@
           links:
             - elasticsearch
           ports:
-            - "5601:5601"
+            - "{{ kibana_port }}:{{ kibana_port }}"
   register: output
 
 - debug:
