@@ -1,5 +1,44 @@
 ---
-- name: Logging into Gogs Docker Registry
+- name: Logging into Flurentd Docker Registry
+  docker_login:
+    registry: "{{ fluentd_registry }}"
+    username: "{{ fluentd_registry_username }}"
+    password: "{{ fluentd_registry_password }}"
+  when: fluentd_registry_login == true
+
+- name: Generate fluentd Dockerfile from variables
+  template:
+    src: "fluentd_Dockerfile.j2"
+    dest: "/tmp/Dockerfile"
+  delegate_to: localhost
+
+- name: Build the flurentd Dockerfile image
+  include_role:
+    name: docker_manage_hosts
+    tasks_from: build_dockerfile
+  vars:
+    image_name: "{{ fluentd_image_name }}-elasticsearch"
+    image_tag: "1"
+    dockerfile: "/tmp/Dockerfile"
+
+- name: Remove generate fluentd Dockerfile
+  file:
+    path: "/tmp/Dockerfile"
+    state: absent
+
+- name: Creates directory
+  become: yes
+  file:
+    path: "{{ fluentd_host_dir }}"
+    state: directory
+    mode: 0777
+
+- name: Copy the fluentd conf file to fluentd conf directory
+  template:
+    src: "fluentd_conf.j2"
+    dest: "{{ fluentd_host_dir }}/fluent.conf"
+
+- name: Logging into Kibana Docker Registry
   docker_login:
     registry: "{{ kibana_registry }}"
     username: "{{ kibana_registry_username }}"
@@ -8,5 +47,58 @@
 
 - name: Pulling Kibana image
   docker_image:
-     name: "{{ kibana_registry }}{{ kibana_image_name }}"
+     name: "{{ kibana_registry }}/{{ kibana_image_name }}"
      state: present
+
+- name: Logging into Elasticsearch Docker Registry
+  docker_login:
+    registry: "{{ elasticsearch_registry }}"
+    username: "{{ elasticsearch_registry_username }}"
+    password: "{{ elasticsearch_registry_password }}"
+  when: kibana_registry_login == true
+
+- name: Pulling Elasticsearch image
+  docker_image:
+     name: "{{ elasticsearch_registry }}/{{ elasticsearch_image_name }}"
+     state: present
+
+- name: Start up the FluentD, ElasticSearch and Kabina
+  docker_service:
+    state: present
+    project_name: EFK
+    definition:
+      version: '2'
+      services:
+        fluentd:
+          image: "{{ fluentd_image_name }}-elasticsearch"
+          container_name: fluentd
+          restart: unless-stopped
+          volumes:
+            - "{{ fluentd_host_dir }}:{{ fluentd_conf_dir }}"
+          links:
+            - elasticsearch
+          ports:
+            - "{{ fluentd_port }}:{{ fluentd_port }}"
+            - "{{ fluentd_port }}:{{ fluentd_port }}/udp"
+        elasticsearch:
+          image: "{{ elasticsearch_registry }}/{{ elasticsearch_image_name }}"
+          container_name: elasticsearch
+          restart: unless-stopped
+          expose:
+            - "{{ elasticsearch_port }}"
+          ports:
+            - "{{ elasticsearch_port }}:{{ elasticsearch_port }}"
+
+        kibana:
+          image: "{{ kibana_registry }}/{{ kibana_image_name }}"
+          container_name: kibana
+          restart: unless-stopped
+          links:
+            - elasticsearch
+          ports:
+            - "{{ kibana_port }}:{{ kibana_port }}"
+  register: output
+
+- debug:
+    var: output
+...

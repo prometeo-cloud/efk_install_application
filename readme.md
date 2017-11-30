@@ -2,7 +2,7 @@
 
 ## Description:
 
-Install ELK
+Install EFK
 
 ## Behaviour:
 
