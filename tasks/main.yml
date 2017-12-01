@@ -7,9 +7,10 @@
   when: fluentd_registry_login == true
 
 - name: Generate fluentd Dockerfile from variables
+  become: yes
   template:
     src: "fluentd_Dockerfile.j2"
-    dest: "/tmp/Dockerfile"
+    dest: "./Dockerfile"
   delegate_to: localhost
 
 - name: Build the flurentd Dockerfile image
@@ -19,14 +20,15 @@
   vars:
     image_name: "{{ fluentd_image_name }}-elasticsearch"
     image_tag: "1"
-    dockerfile: "/tmp/Dockerfile"
+    dockerfile: "./Dockerfile"
 
 - name: Remove generate fluentd Dockerfile
+  become: yes
   file:
-    path: "/tmp/Dockerfile"
+    path: "./Dockerfile"
     state: absent
 
-- name: Creates directory
+- name: Creates the fluent configuration directory on the managed host
   become: yes
   file:
     path: "{{ fluentd_host_dir }}"
