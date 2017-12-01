@@ -54,5 +54,5 @@ galaxy_info:
   #       Maximum 20 tags per role.
 
 dependencies:
-  - dockercompose_configure_machine
+#  - dockercompose_configure_machine
 
